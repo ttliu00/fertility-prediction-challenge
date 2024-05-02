@@ -14,12 +14,16 @@
 # run.R can be used to test your submission.
 
 # List your packages here. Don't forget to update packages.R!
+library(caret)
+library(boot)
+library(glmnet)
+library(MLmetrics)
 library(dplyr) # as an example, not used here
 
 clean_df <- function(df, background_df = NULL){
   # Preprocess the input dataframe to feed the model.
   ### If no cleaning is done (e.g. if all the cleaning is done in a pipeline) leave only the "return df" command
-
+  
   # Parameters:
   # df (dataframe): The input dataframe containing the raw data (e.g., from PreFer_train_data.csv or PreFer_fake_data.csv).
   # background (dataframe): Optional input dataframe containing background data (e.g., from PreFer_train_background_data.csv or PreFer_fake_background_data.csv).
@@ -27,22 +31,36 @@ clean_df <- function(df, background_df = NULL){
   # Returns:
   # data frame: The cleaned dataframe with only the necessary columns and processed variables.
 
-  ## This script contains a bare minimum working example
-  # Create new age variable
-  df$age <- 2024 - df$birthyear_bg
-
-  # Selecting variables for modelling
-
-  keepcols = c('nomem_encr', # ID variable required for predictions,
-               'age')        # newly created variable
+  df = read.csv(df)
+  df = df %>% 
+    rename(gender = gender_bg,
+           age = age_bg,
+           has_partner = cf20m024,
+           civil_status2020 = burgstat_2020,
+           domestic_situation2020 = woonvorm_2020,
+           how_many_kids2014 = cf14g036,
+           num_kids_want2020 = cf20m129,
+           timing_next_child2020 = cf20m130,
+           income_sufficiency2020 = ci20m378,
+           health2020 = ch20m004,
+           religious2018 = cr18k012,
+           has_paid_work2020 = cw20m001,
+           highest_ed2020 = oplzon_2020,
+           net_household_income2020 = nettohh_f_2020,
+           urban2020 = sted_2020) 
   
-  ## Keeping data with variables selected
-  df <- df[ , keepcols ]
+  df = df %>% 
+    mutate_at(vars(c("gender", "has_partner", "civil_status2020", "domestic_situation2020",
+                     "income_sufficiency2020", "health2020",
+                     "religious2018", "has_paid_work2020", "highest_ed2020",
+                     "urban2020")), as.factor) %>% 
+    drop_na("age", "has_partner", "religious2018", "net_household_income2020",
+            "urban2020")
 
   return(df)
 }
 
-predict_outcomes <- function(df, background_df = NULL, model_path = "./model.rds"){
+predict_outcomes <- function(df, background_df = NULL, model_path = "model.rda"){
   # Generate predictions using the saved model and the input dataframe.
     
   # The predict_outcomes function accepts a dataframe as an argument
@@ -62,16 +80,16 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./model.rds
   # Returns:
   # dataframe: A dataframe containing the identifiers and their corresponding predictions.
   
-  ## This script contains a bare minimum working example
-  if( !("nomem_encr" %in% colnames(df)) ) {
-    warning("The identifier variable 'nomem_encr' should be in the dataset")
-  }
-
+  
   # Load the model
   model <- readRDS(model_path)
     
   # Preprocess the fake / holdout data
   df <- clean_df(df, background_df)
+  
+  if( !("nomem_encr" %in% colnames(df)) ) {
+    warning("The identifier variable 'nomem_encr' should be in the dataset")
+  }
 
   # Exclude the variable nomem_encr if this variable is NOT in your model
   vars_without_id <- colnames(df)[colnames(df) != "nomem_encr"]
@@ -79,10 +97,10 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "./model.rds
   # Generate predictions from model
   predictions <- predict(model, 
                          subset(df, select = vars_without_id), 
-                         type = "response") 
+                         type = "prob") 
   
   # Create predictions that should be 0s and 1s rather than, e.g., probabilities
-  predictions <- ifelse(predictions > 0.5, 1, 0)  
+  predictions <- ifelse(predictions[2] > 0.25, 1, 0)  
   
   # Output file should be data.frame with two columns, nomem_encr and predictions
   df_predict <- data.frame("nomem_encr" = df[ , "nomem_encr" ], "prediction" = predictions)
