@@ -23,6 +23,10 @@ train_save_model <- function(cleaned_df, outcome_df) {
   # Set the seed for reproducibility
   set.seed(08540)
   
+  cleaned_df = cleaned_df %>% merge(outcome_df, by = "nomem_encr") %>% 
+    drop_na(new_child) %>% 
+    mutate(new_child = as.factor(new_child))
+  
   # Create a vector with the class labels
   class_labels <- cleaned_df$new_child
   
@@ -87,5 +91,5 @@ train_save_model <- function(cleaned_df, outcome_df) {
   specificity <- Specificity(y_pred = predicted_classes, y_true = true_labels)
   cat("Specificity:", specificity, "\n")
 
-  saveRDS(model, file ="model.rda")
+  saveRDS(model, file ="model.rds")
 }
