@@ -82,8 +82,7 @@ predict_outcomes <- function(df, background_df = NULL, model_path = "model.rda")
   
   
   # Load the model
-  # model <- readRDS(model_path)
-  model <- load(file = model_path)
+  model <- readRDS(model_path)
     
   # Preprocess the fake / holdout data
   df <- clean_df(df, background_df)
