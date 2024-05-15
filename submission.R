@@ -60,7 +60,7 @@ clean_df <- function(df, background_df = NULL){
   return(df)
 }
 
-predict_outcomes <- function(df, background_df = NULL, model_path = "./model.rda"){
+predict_outcomes <- function(df, background_df = NULL, model_path = "model.rda"){
   # Generate predictions using the saved model and the input dataframe.
     
   # The predict_outcomes function accepts a dataframe as an argument
