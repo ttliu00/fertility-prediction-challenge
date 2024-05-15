@@ -32,7 +32,6 @@ clean_df <- function(df, background_df = NULL){
   # Returns:
   # data frame: The cleaned dataframe with only the necessary columns and processed variables.
 
-  df = read.csv(df)
   df = df %>% 
     rename(gender = gender_bg,
            age = age_bg,
