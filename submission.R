@@ -19,6 +19,7 @@ library(boot)
 library(glmnet)
 library(MLmetrics)
 library(dplyr) # as an example, not used here
+library(tidyverse)
 
 clean_df <- function(df, background_df = NULL){
   # Preprocess the input dataframe to feed the model.
